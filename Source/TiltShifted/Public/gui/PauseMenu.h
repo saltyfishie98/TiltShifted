@@ -6,7 +6,9 @@
 #include "CoreMinimal.h"
 #include "PauseMenu.generated.h"
 
-DECLARE_EVENT(UPauseMenu, MenuResumeEvent);
+class USettingsMenu;
+
+DECLARE_EVENT_OneParam(UPauseMenu, SettingsBtnEvent, bool);
 
 /**
  *
@@ -17,10 +19,24 @@ class TILTSHIFTED_API UPauseMenu : public UUserWidget
     GENERATED_BODY()
 
   public:
-    MenuResumeEvent ResumeBtnClicked;
+    SettingsBtnEvent SettingsToggled;
+
+  public:
+    UFUNCTION(BlueprintCallable, Category = "Gameplay") void ResumeGame();
 
     UFUNCTION(BlueprintCallable, Category = "Gameplay")
-    void ResumeGame();
+    void PauseGame();
+
+    UFUNCTION(BlueprintCallable, Category = "Gameplay")
+    void OpenSettings();
 
   protected:
+    UPROPERTY(EditAnywhere, Category = "UserWidget")
+    TSubclassOf<USettingsMenu> SettingsWidget;
+
+  private:
+    USettingsMenu* m_SettingsWidgetInst;
+    APlayerController* m_PlayerController;
+
+    void checkPlayerController();
 };

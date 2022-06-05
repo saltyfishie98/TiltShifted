@@ -1,7 +1,6 @@
 #include "characters/TiltCharacter.h"
 
 #include "Blueprint/UserWidget.h"
-#include "Blueprint/WidgetLayoutLibrary.h"
 #include "CineCameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -11,6 +10,20 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "gui/PauseMenu.h"
 
+#pragma region Helpers
+void ATiltCharacter::DisableEsc()
+{
+    m_PlayerInputComponent->RemoveActionBinding("Pause", IE_Pressed);
+}
+
+void ATiltCharacter::EnableEsc()
+{
+    m_PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ATiltCharacter::TogglePause)
+        .bExecuteWhenPaused = true;
+}
+#pragma endregion
+
+#pragma region Init
 ATiltCharacter::ATiltCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -51,15 +64,36 @@ ATiltCharacter::ATiltCharacter()
     MeshComp->SetupAttachment(RootComponent);
 }
 
+void ATiltCharacter::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+
+    if (m_PauseMenuWidgetInst == nullptr) {
+        UE_LOG(LogTemp, Error, TEXT("SettingsWidgetInst is NULL"));
+        m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
+    }
+
+    if (!m_PauseMenuWidgetInst)
+        return;
+
+    m_PauseMenuWidgetInst->SettingsToggled.AddLambda([&](bool intoSettings) {
+        if (intoSettings) {
+            DisableEsc();
+        } else {
+            EnableEsc();
+        }
+    });
+}
+#pragma endregion
+
+#pragma region Inputs
 void ATiltCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
+    m_PlayerInputComponent = PlayerInputComponent;
 
     PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
     PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-
-    PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ATiltCharacter::TogglePause)
-        .bExecuteWhenPaused = true;
 
     PlayerInputComponent->BindAxis("MoveForward", this, &ATiltCharacter::MoveForward);
     PlayerInputComponent->BindAxis("MoveRight", this, &ATiltCharacter::MoveRight);
@@ -68,9 +102,10 @@ void ATiltCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
     PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
     PlayerInputComponent->BindAxis("TurnRate", this, &ATiltCharacter::TurnAtRate);
     PlayerInputComponent->BindAxis("LookUpAtRate", this, &ATiltCharacter::LookUpAtRate);
+
+    EnableEsc();
 }
 
-/// Movements /////////////////////////////////////////////////////////////////////////////////////
 void ATiltCharacter::MoveForward(float value)
 {
     if ((Controller) && (value != 0.f)) {
@@ -102,59 +137,28 @@ void ATiltCharacter::LookUpAtRate(float value)
 {
     AddControllerPitchInput(value * BaseLookUpAtRate * GetWorld()->GetDeltaSeconds());
 }
+#pragma endregion
 
-/// Pause /////////////////////////////////////////////////////////////////////////////////////////
-void ATiltCharacter::OnResumeBtnClicked(UPauseMenu* widget)
-{
-    if (widget) {
-        widget->ResumeBtnClicked.AddLambda([&]() { ATiltCharacter::ResumeGame(); });
-    }
-}
-
+#pragma region PauseMenu
 void ATiltCharacter::TogglePause()
 {
-    PauseMenuWidgetInstance = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
-    PlayerController = Cast<APlayerController>(GetController());
-
-    OnResumeBtnClicked(PauseMenuWidgetInstance);
-
-    if (PlayerController == nullptr) {
-        UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL"));
-        return;
-    }
-
-    if (PauseMenuWidgetInstance == nullptr) {
+    if (m_PauseMenuWidgetInst == nullptr) {
         UE_LOG(LogTemp, Error, TEXT("PauseMenuWidgetInstance is NULL"));
+        m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
+    }
+
+    if (m_PlayerController == nullptr) {
+        UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL"));
+        m_PlayerController = Cast<APlayerController>(GetController());
+    }
+
+    if (!m_PauseMenuWidgetInst && !m_PlayerController)
         return;
-    }
 
-    if (isPause) {
-        ResumeGame();
+    if (m_PlayerController->IsPaused()) {
+        m_PauseMenuWidgetInst->ResumeGame();
     } else {
-        PauseGame();
+        m_PauseMenuWidgetInst->PauseGame();
     }
 }
-
-void ATiltCharacter::PauseGame()
-{
-    FInputModeGameAndUI InputMode;
-
-    PlayerController->SetPause(true);
-    PauseMenuWidgetInstance->AddToViewport();
-    PlayerController->SetInputMode(InputMode);
-    PlayerController->bShowMouseCursor = true;
-
-    isPause = true;
-}
-
-void ATiltCharacter::ResumeGame()
-{
-    FInputModeGameOnly InputMode;
-
-    UWidgetLayoutLibrary::RemoveAllWidgets(this);
-    PlayerController->SetInputMode(InputMode);
-    PlayerController->bShowMouseCursor = false;
-    PlayerController->SetPause(false);
-
-    isPause = false;
-}
+#pragma endregion

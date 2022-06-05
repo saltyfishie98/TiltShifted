@@ -30,23 +30,19 @@ class TILTSHIFTED_API ATiltCharacter : public ACharacter
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player")
     UStaticMeshComponent* MeshComp;
 
-    UFUNCTION(BlueprintCallable, Category = "Gameplay")
-    void OnResumeBtnClicked(UPauseMenu* widget);
+    UPROPERTY(EditAnywhere, Category = "UserWidget")
+    TSubclassOf<UPauseMenu> PauseMenuWidget;
 
     UFUNCTION(BlueprintCallable, Category = "Gameplay")
     void TogglePause();
-
-    UFUNCTION(BlueprintCallable, Category = "Gameplay")
-    void ResumeGame();
-
-    UFUNCTION(BlueprintCallable, Category = "Gameplay")
-    void PauseGame();
 
   protected:
     void MoveForward(float value);
     void MoveRight(float value);
     void TurnAtRate(float value);
     void LookUpAtRate(float value);
+    void DisableEsc();
+    void EnableEsc();
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
     float BaseTurnRate = 45.f;
@@ -54,14 +50,12 @@ class TILTSHIFTED_API ATiltCharacter : public ACharacter
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
     float BaseLookUpAtRate = 45.f;
 
-    UPROPERTY(EditAnywhere, Category = "UserWidget")
-    TSubclassOf<UPauseMenu> PauseMenuWidget;
-
   public:
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+    virtual void PostInitializeComponents() override;
 
   private:
-    UPauseMenu* PauseMenuWidgetInstance;
-    APlayerController* PlayerController;
-    bool isPause = false;
+    UPauseMenu* m_PauseMenuWidgetInst;
+    APlayerController* m_PlayerController;
+    UInputComponent* m_PlayerInputComponent;
 };
