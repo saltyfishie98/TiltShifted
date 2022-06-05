@@ -8,8 +8,6 @@
 
 class USettingsMenu;
 
-DECLARE_EVENT_OneParam(UPauseMenu, SettingsBtnEvent, bool);
-
 /**
  *
  */
@@ -17,9 +15,6 @@ UCLASS(BlueprintType, Blueprintable)
 class TILTSHIFTED_API UPauseMenu : public UUserWidget
 {
     GENERATED_BODY()
-
-  public:
-    SettingsBtnEvent SettingsToggled;
 
   public:
     UFUNCTION(BlueprintCallable, Category = "Gameplay") void ResumeGame();
@@ -30,9 +25,14 @@ class TILTSHIFTED_API UPauseMenu : public UUserWidget
     UFUNCTION(BlueprintCallable, Category = "Gameplay")
     void OpenSettings();
 
+    USettingsMenu* GetSettingsWidget();
+
   protected:
     UPROPERTY(EditAnywhere, Category = "UserWidget")
     TSubclassOf<USettingsMenu> SettingsWidget;
+
+  public:
+    virtual bool Initialize() override;
 
   private:
     USettingsMenu* m_SettingsWidgetInst;

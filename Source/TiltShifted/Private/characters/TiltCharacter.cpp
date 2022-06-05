@@ -9,8 +9,9 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "gui/PauseMenu.h"
+#include "gui/SettingsMenu.h"
 
-#pragma region Helpers
+#pragma region /// Helpers //////////////////////////////////////////////////////////////////////
 void ATiltCharacter::DisableEsc()
 {
     m_PlayerInputComponent->RemoveActionBinding("Pause", IE_Pressed);
@@ -23,7 +24,7 @@ void ATiltCharacter::EnableEsc()
 }
 #pragma endregion
 
-#pragma region Init
+#pragma region /// Init /////////////////////////////////////////////////////////////////////////
 ATiltCharacter::ATiltCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -68,25 +69,22 @@ void ATiltCharacter::PostInitializeComponents()
 {
     Super::PostInitializeComponents();
 
-    if (m_PauseMenuWidgetInst == nullptr) {
-        UE_LOG(LogTemp, Error, TEXT("SettingsWidgetInst is NULL"));
-        m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
+    m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
+    auto SettingsWidgetInst = m_PauseMenuWidgetInst->GetSettingsWidget();
+
+    if (SettingsWidgetInst) {
+        SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
+            if (SettingsOpen) {
+                DisableEsc();
+            } else {
+                EnableEsc();
+            }
+        });
     }
-
-    if (!m_PauseMenuWidgetInst)
-        return;
-
-    m_PauseMenuWidgetInst->SettingsToggled.AddLambda([&](bool intoSettings) {
-        if (intoSettings) {
-            DisableEsc();
-        } else {
-            EnableEsc();
-        }
-    });
 }
 #pragma endregion
 
-#pragma region Inputs
+#pragma region /// Inputs ///////////////////////////////////////////////////////////////////////
 void ATiltCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -139,7 +137,7 @@ void ATiltCharacter::LookUpAtRate(float value)
 }
 #pragma endregion
 
-#pragma region PauseMenu
+#pragma region /// PauseMenu ////////////////////////////////////////////////////////////////////
 void ATiltCharacter::TogglePause()
 {
     if (m_PauseMenuWidgetInst == nullptr) {

@@ -6,6 +6,8 @@
 #include "CoreMinimal.h"
 #include "SettingsMenu.generated.h"
 
+DECLARE_EVENT_OneParam(USettingsMenu, SettingsBtnEvent, bool);
+
 /**
  *
  */
@@ -15,4 +17,11 @@ class TILTSHIFTED_API USettingsMenu : public UUserWidget
     GENERATED_BODY()
 
   public:
+    SettingsBtnEvent SettingsOpen;
+
+    UFUNCTION(BlueprintCallable, Category = "Gameplay")
+    void Open();
+
+    UFUNCTION(BlueprintCallable, Category = "Gameplay")
+    void Close();
 };
