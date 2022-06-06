@@ -12,6 +12,7 @@
 #include "gui/SettingsMenu.h"
 
 #pragma region /// Helpers //////////////////////////////////////////////////////////////////////
+
 void ATiltCharacter::DisableEsc()
 {
     m_PlayerInputComponent->RemoveActionBinding("Pause", IE_Pressed);
@@ -22,9 +23,10 @@ void ATiltCharacter::EnableEsc()
     m_PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ATiltCharacter::TogglePause)
         .bExecuteWhenPaused = true;
 }
-#pragma endregion
 
+#pragma endregion
 #pragma region /// Init /////////////////////////////////////////////////////////////////////////
+
 ATiltCharacter::ATiltCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -65,26 +67,9 @@ ATiltCharacter::ATiltCharacter()
     MeshComp->SetupAttachment(RootComponent);
 }
 
-void ATiltCharacter::PostInitializeComponents()
-{
-    Super::PostInitializeComponents();
-
-    m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
-    auto SettingsWidgetInst = m_PauseMenuWidgetInst->GetSettingsWidget();
-
-    if (SettingsWidgetInst) {
-        SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
-            if (SettingsOpen) {
-                DisableEsc();
-            } else {
-                EnableEsc();
-            }
-        });
-    }
-}
 #pragma endregion
-
 #pragma region /// Inputs ///////////////////////////////////////////////////////////////////////
+
 void ATiltCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -135,14 +120,26 @@ void ATiltCharacter::LookUpAtRate(float value)
 {
     AddControllerPitchInput(value * BaseLookUpAtRate * GetWorld()->GetDeltaSeconds());
 }
-#pragma endregion
 
-#pragma region /// PauseMenu ////////////////////////////////////////////////////////////////////
+#pragma endregion
+#pragma region /// Public Methods ///////////////////////////////////////////////////////////////
+
 void ATiltCharacter::TogglePause()
 {
     if (m_PauseMenuWidgetInst == nullptr) {
         UE_LOG(LogTemp, Error, TEXT("PauseMenuWidgetInstance is NULL"));
         m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
+
+        auto SettingsWidgetInst = m_PauseMenuWidgetInst->GetSettingsWidget();
+        if (SettingsWidgetInst) {
+            SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
+                if (SettingsOpen) {
+                    DisableEsc();
+                } else {
+                    EnableEsc();
+                }
+            });
+        }
     }
 
     if (m_PlayerController == nullptr) {
@@ -159,4 +156,5 @@ void ATiltCharacter::TogglePause()
         m_PauseMenuWidgetInst->PauseGame();
     }
 }
+
 #pragma endregion

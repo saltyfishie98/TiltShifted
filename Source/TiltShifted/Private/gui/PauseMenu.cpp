@@ -10,57 +10,61 @@
 #include "gui/SettingsMenu.h"
 
 #pragma region /// Helpers //////////////////////////////////////////////////////////////////////
-void UPauseMenu::checkPlayerController()
-{
-    if (m_PlayerController == nullptr) {
-        UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL"));
-        m_PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-    }
-}
 
 USettingsMenu* UPauseMenu::GetSettingsWidget()
 {
     return m_SettingsWidgetInst;
 }
-#pragma endregion
 
+#pragma endregion
 #pragma region /// Init /////////////////////////////////////////////////////////////////////////
+
 bool UPauseMenu::Initialize()
 {
     Super::Initialize();
 
     m_SettingsWidgetInst = CreateWidget<USettingsMenu>(GetWorld(), SettingsWidget);
+
     if (m_SettingsWidgetInst) {
         m_SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
             if (!SettingsOpen) {
-                AddToViewport();
+                SetVisibility(ESlateVisibility::Visible);
             }
         });
-
         return true;
     }
-
     return false;
 }
+
 #pragma endregion
+#pragma region /// Public Methods ///////////////////////////////////////////////////////////////
 
 void UPauseMenu::PauseGame()
 {
-    checkPlayerController();
+    if (m_PlayerController == nullptr) {
+        UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL"));
+        m_PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    }
+
+    if (!m_PlayerController)
+        return;
+
     FInputModeGameAndUI InputMode;
 
+    AddToViewport();
     m_PlayerController->SetPause(true);
     m_PlayerController->SetInputMode(InputMode);
     m_PlayerController->bShowMouseCursor = true;
-    AddToViewport();
 }
 
 void UPauseMenu::ResumeGame()
 {
-    checkPlayerController();
+    if (!m_PlayerController)
+        return;
+
     FInputModeGameOnly InputMode;
 
-    RemoveFromParent();
+    RemoveFromViewport();
     m_PlayerController->SetInputMode(InputMode);
     m_PlayerController->bShowMouseCursor = false;
     m_PlayerController->SetPause(false);
@@ -68,14 +72,12 @@ void UPauseMenu::ResumeGame()
 
 void UPauseMenu::OpenSettings()
 {
-    if (m_SettingsWidgetInst == nullptr) {
-        UE_LOG(LogTemp, Error, TEXT("SettingsWidgetInst is NULL"));
-        m_SettingsWidgetInst = CreateWidget<USettingsMenu>(GetWorld(), SettingsWidget);
-    }
+    SetVisibility(ESlateVisibility::Hidden);
 
-    if (!m_SettingsWidgetInst)
+    if (!m_SettingsWidgetInst && !m_PlayerController)
         return;
 
-    RemoveFromParent();
     m_SettingsWidgetInst->Open();
 }
+
+#pragma endregion

@@ -35,8 +35,9 @@ class TILTSHIFTED_API UPauseMenu : public UUserWidget
     virtual bool Initialize() override;
 
   private:
-    USettingsMenu* m_SettingsWidgetInst;
-    APlayerController* m_PlayerController;
+    UPROPERTY()
+    USettingsMenu* m_SettingsWidgetInst = nullptr;
 
-    void checkPlayerController();
+    UPROPERTY()
+    APlayerController* m_PlayerController = nullptr;
 };

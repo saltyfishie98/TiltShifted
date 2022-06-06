@@ -52,10 +52,14 @@ class TILTSHIFTED_API ATiltCharacter : public ACharacter
 
   public:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-    virtual void PostInitializeComponents() override;
 
   private:
-    UPauseMenu* m_PauseMenuWidgetInst;
-    APlayerController* m_PlayerController;
-    UInputComponent* m_PlayerInputComponent;
+    UPROPERTY()
+    UPauseMenu* m_PauseMenuWidgetInst = nullptr;
+
+    UPROPERTY()
+    APlayerController* m_PlayerController = nullptr;
+
+    UPROPERTY()
+    UInputComponent* m_PlayerInputComponent = nullptr;
 };

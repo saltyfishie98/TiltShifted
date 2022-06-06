@@ -17,6 +17,8 @@ class TILTSHIFTED_API USettingsMenu : public UUserWidget
     GENERATED_BODY()
 
   public:
+    virtual bool Initialize() override;
+
     SettingsBtnEvent SettingsOpen;
 
     UFUNCTION(BlueprintCallable, Category = "Gameplay")
