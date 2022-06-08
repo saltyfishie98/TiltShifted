@@ -4,6 +4,7 @@
 #include "CineCameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
@@ -27,6 +28,34 @@ void ATiltCharacter::EnableEsc()
 #pragma endregion
 #pragma region /// Init /////////////////////////////////////////////////////////////////////////
 
+void ATiltCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+
+    m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
+    if (!IsValid(m_PauseMenuWidgetInst)) {
+        GEngine->AddOnScreenDebugMessage(
+            -1, 5.f, FColor::Red, TEXT("Character PauseMenu widget not set!"));
+
+        m_PauseMenuWidgetInst = nullptr;
+
+        return;
+    }
+
+    auto SettingsWidgetInst = m_PauseMenuWidgetInst->GetSettingsWidget();
+    if (!SettingsWidgetInst) {
+        return;
+    }
+
+    SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
+        if (SettingsOpen) {
+            DisableEsc();
+        } else {
+            EnableEsc();
+        }
+    });
+}
+
 ATiltCharacter::ATiltCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -47,20 +76,27 @@ ATiltCharacter::ATiltCharacter()
         mCapsuleComponent->SetCapsuleRadius(50.f);
     }
 
+    LightEmission = CreateDefaultSubobject<UPointLightComponent>(TEXT("LightEmission"));
+    LightEmission->SetupAttachment(RootComponent);
+    LightEmission->SetIntensity(100000.f);
+    LightEmission->SetAttenuationRadius(16384.f);
+    LightEmission->SetLightFalloffExponent(8.f);
+
     SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
     SpringArmComp->SetupAttachment(RootComponent);
     SpringArmComp->AddRelativeRotation({-30.f, 0.f, 0.f});
-    SpringArmComp->TargetArmLength = 6000.f;
+    SpringArmComp->TargetArmLength = 4500.f;
     SpringArmComp->bUsePawnControlRotation = true;
     SpringArmComp->bInheritPitch = false;
     SpringArmComp->bEnableCameraLag = true;
+    SpringArmComp->bDoCollisionTest = false;
 
     CineCameraComp = CreateDefaultSubobject<UCineCameraComponent>(TEXT("CineCameraComponent"));
     CineCameraComp->SetupAttachment(SpringArmComp);
     CineCameraComp->LensSettings.MinFStop = 0.f;
     CineCameraComp->FocusSettings.FocusMethod = ECameraFocusMethod::Manual;
-    CineCameraComp->FocusSettings.ManualFocusDistance = 6000.f;
-    CineCameraComp->CurrentFocalLength = 50.f;
+    CineCameraComp->FocusSettings.ManualFocusDistance = 4500.f;
+    CineCameraComp->CurrentFocalLength = 30.f;
     CineCameraComp->CurrentAperture = 0.025f;
 
     MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
@@ -126,29 +162,16 @@ void ATiltCharacter::LookUpAtRate(float value)
 
 void ATiltCharacter::TogglePause()
 {
-    if (m_PauseMenuWidgetInst == nullptr) {
-        UE_LOG(LogTemp, Error, TEXT("PauseMenuWidgetInstance is NULL"));
-        m_PauseMenuWidgetInst = CreateWidget<UPauseMenu>(GetWorld(), PauseMenuWidget);
-
-        auto SettingsWidgetInst = m_PauseMenuWidgetInst->GetSettingsWidget();
-        if (SettingsWidgetInst) {
-            SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
-                if (SettingsOpen) {
-                    DisableEsc();
-                } else {
-                    EnableEsc();
-                }
-            });
-        }
-    }
-
     if (m_PlayerController == nullptr) {
         UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL"));
         m_PlayerController = Cast<APlayerController>(GetController());
     }
 
-    if (!m_PauseMenuWidgetInst && !m_PlayerController)
+    if (!m_PauseMenuWidgetInst) {
+        GEngine->AddOnScreenDebugMessage(
+            -1, 5.f, FColor::Red, TEXT("Character PauseMenu widget not set!"));
         return;
+    }
 
     if (m_PlayerController->IsPaused()) {
         m_PauseMenuWidgetInst->ResumeGame();

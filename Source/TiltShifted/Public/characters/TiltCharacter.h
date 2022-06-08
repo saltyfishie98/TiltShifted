@@ -11,6 +11,7 @@ class UCineCameraComponent;
 class UStaticMeshComponent;
 class UCharacterMovementComponent;
 class UPauseMenu;
+class UPointLightComponent;
 
 UCLASS()
 class TILTSHIFTED_API ATiltCharacter : public ACharacter
@@ -18,7 +19,6 @@ class TILTSHIFTED_API ATiltCharacter : public ACharacter
     GENERATED_BODY()
 
   public:
-    // Sets default values for this character's properties
     ATiltCharacter();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -30,11 +30,16 @@ class TILTSHIFTED_API ATiltCharacter : public ACharacter
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player")
     UStaticMeshComponent* MeshComp;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player")
+    UPointLightComponent* LightEmission;
+
     UPROPERTY(EditAnywhere, Category = "UserWidget")
     TSubclassOf<UPauseMenu> PauseMenuWidget;
 
     UFUNCTION(BlueprintCallable, Category = "Gameplay")
     void TogglePause();
+
+    virtual void BeginPlay() override;
 
   protected:
     void MoveForward(float value);

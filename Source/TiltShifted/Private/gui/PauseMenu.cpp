@@ -25,15 +25,22 @@ bool UPauseMenu::Initialize()
 
     m_SettingsWidgetInst = CreateWidget<USettingsMenu>(GetWorld(), SettingsWidget);
 
-    if (m_SettingsWidgetInst) {
-        m_SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
-            if (!SettingsOpen) {
-                SetVisibility(ESlateVisibility::Visible);
-            }
-        });
-        return true;
+    if (!IsValid(m_SettingsWidgetInst)) {
+        GEngine->AddOnScreenDebugMessage(
+            -1, 5.f, FColor::Red, TEXT("Settings widget for PauseMenu not set!"));
+
+        m_SettingsWidgetInst = nullptr;
+
+        return false;
     }
-    return false;
+
+    m_SettingsWidgetInst->SettingsOpen.AddLambda([&](bool SettingsOpen) {
+        if (!SettingsOpen) {
+            SetVisibility(ESlateVisibility::Visible);
+        }
+    });
+
+    return true;
 }
 
 #pragma endregion
@@ -46,9 +53,6 @@ void UPauseMenu::PauseGame()
         m_PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     }
 
-    if (!m_PlayerController)
-        return;
-
     FInputModeGameAndUI InputMode;
 
     AddToViewport();
@@ -59,9 +63,6 @@ void UPauseMenu::PauseGame()
 
 void UPauseMenu::ResumeGame()
 {
-    if (!m_PlayerController)
-        return;
-
     FInputModeGameOnly InputMode;
 
     RemoveFromViewport();
@@ -72,11 +73,13 @@ void UPauseMenu::ResumeGame()
 
 void UPauseMenu::OpenSettings()
 {
-    SetVisibility(ESlateVisibility::Hidden);
-
-    if (!m_SettingsWidgetInst && !m_PlayerController)
+    if (!m_SettingsWidgetInst) {
+        GEngine->AddOnScreenDebugMessage(
+            -1, 5.f, FColor::Red, TEXT("Settings widget for PauseMenu not set!"));
         return;
+    }
 
+    SetVisibility(ESlateVisibility::Hidden);
     m_SettingsWidgetInst->Open();
 }
 
